@@ -175,7 +175,14 @@ db.password=your-database-password
    mvn test
    ```
 
-5. **Deploy locally**
+5. **Run PTO balance integration tests** (requires PostgreSQL and a running app)
+   ```bash
+   DB_HOST=localhost DB_PORT=5432 DB_NAME=mydb DB_USER=postgres DB_PASSWORD=secret \
+     bash tests/test-pto-balance.sh
+   ```
+   See [`tests/README.md`](tests/README.md) for details.
+
+6. **Deploy locally**
    - Import the project into Anypoint Studio
    - Configure database connection parameters
    - Run the application
