@@ -1,0 +1,6 @@
+{
+  "username": "your_username",
+  "password": "your_password_here",
+  "callback_url": "https://your-salesforce-org.lightning.force.com/services/apexrest/api/auth/callback/",
+  "salesforce_user_id": "005XXXXXXXXXXXXXXX"
+}

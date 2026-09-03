@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Service API - Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2rem;
+        }
+        .login-header p {
+            color: #666;
+            margin: 0.5rem 0 0 0;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        .create-account {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .create-account a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .create-account a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: #fdf2f2;
+            border: 1px solid #fecaca;
+            border-radius: 5px;
+            display: none;
+        }
+        .success-message {
+            color: #27ae60;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: #f0f9f4;
+            border: 1px solid #a7f3d0;
+            border-radius: 5px;
+            display: none;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .config-section label {
+            font-size: 0.9rem;
+        }
+        .config-section input {
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to access Employee Services</p>
+        </div>
+        
+        <!-- Configuration Section -->
+        <div class="config-section">
+            <div class="form-group">
+                <label for="apiUrl">API Base URL</label>
+                <input type="url" id="apiUrl" value="https://employee-api-jtx6w5.5sc6y6-2.usa-e2.cloudhub.io" placeholder="https://your-api-domain.com">
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+        
+        <div class="create-account">
+            <p>Don't have an account? <a href="register.html">Create Account</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Extract userId from URL parameters for Salesforce integration
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Check if we're in a popup window from Salesforce
+        const isPopup = window.opener !== null;
+        const salesforceUserId = getUrlParameter('userId');
+
+        // Show context message if opened from Salesforce
+        if (isPopup && salesforceUserId) {
+            document.querySelector('.login-header p').textContent = 
+                'Connecting your Salesforce account to Employee Services';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Get clientId and userId from multiple sources
+            let clientId = '';
+            let salesforceUserId = '';
+            
+            // Check hidden form fields first
+            if (document.getElementById('clientId')) {
+                clientId = document.getElementById('clientId').value;
+            }
+            if (document.getElementById('salesforceUserId')) {
+                salesforceUserId = document.getElementById('salesforceUserId').value;
+            }
+            
+            // Fallback to injected JavaScript config
+            if (!clientId && window.salesforceConfig) {
+                clientId = window.salesforceConfig.clientId;
+                salesforceUserId = window.salesforceConfig.userId;
+            }
+            
+            // Last fallback to URL parameters
+            if (!clientId) {
+                clientId = getUrlParameter('clientId');
+                salesforceUserId = getUrlParameter('userId');
+            }
+            
+            console.log('Form submission data:', { username: username ? 'provided' : 'missing', password: password ? 'provided' : 'missing', clientId, salesforceUserId });
+            
+            hideMessages();
+            
+            try {
+                // Use JSON for authentication endpoint instead of FormData
+                const authData = {
+                    username: username,
+                    password: password
+                };
+                
+                if (clientId) authData.clientId = clientId;
+                if (salesforceUserId) authData.salesforceUserId = salesforceUserId;
+
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(authData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    // Store token and API URL for future use
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('api_url', apiUrl);
+                    if (data.user) localStorage.setItem('user_info', JSON.stringify(data.user));
+                    
+                    // Send token back to parent Salesforce window
+                    if (window.opener) {
+                        console.log('=== SENDING POSTMESSAGE FROM CLIENT ===');
+                        console.log('Message data:', {
+                            type: 'API_AUTH_SUCCESS',
+                            token: data.access_token,
+                            refresh_token: data.refresh_token,
+                            userId: data.user_id,
+                            clientId: data.clientId
+                        });
+                        
+                        window.opener.postMessage({
+                            type: 'API_AUTH_SUCCESS',
+                            token: data.access_token,
+                            refresh_token: data.refresh_token,
+                            userId: data.user_id,
+                            clientId: data.clientId
+                        }, '*');
+                        
+                        // Close the popup window after 1 second
+                        setTimeout(() => {
+                            window.close();
+                        }, 1000);
+                    } else {
+                        // Fallback: show success message if not in popup
+                        showSuccess('Login successful! Your access token: ' + data.access_token);
+                        // Show token for 5 seconds then clear form
+                        setTimeout(() => {
+                            document.getElementById('loginForm').reset();
+                            hideMessages();
+                        }, 8000);
+                    }
+                } else {
+                    showError(data.error_description || data.error || 'Login failed');
+                }
+            } catch (error) {
+                const errorMessage = 'Network error: Unable to connect to server. Check the API URL.';
+                showError(errorMessage);
+                
+                // Send network error to Salesforce if in popup mode
+                if (isPopup && window.opener) {
+                    window.opener.postMessage({
+                        type: 'API_AUTH_ERROR',
+                        error: errorMessage
+                    }, '*');
+                    
+                    setTimeout(() => {
+                        window.close();
+                    }, 3000);
+                }
+            }
+        });
+        
+        // Load saved API URL on page load
+        window.addEventListener('load', function() {
+            const savedApiUrl = localStorage.getItem('api_url');
+            if (savedApiUrl) {
+                document.getElementById('apiUrl').value = savedApiUrl;
+            }
+        });
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // Handle popup close events
+        window.addEventListener('beforeunload', function() {
+            if (isPopup && window.opener) {
+                // Notify Salesforce if popup is closed without authentication
+                try {
+                    window.opener.postMessage({
+                        type: 'API_AUTH_CANCELLED',
+                        error: 'Authentication window was closed'
+                    }, '*');
+                } catch (e) {
+                    // Ignore errors if parent window is not accessible
+                }
+            }
+        });
+    </script>
+</body>
+</html>
